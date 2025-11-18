@@ -6,13 +6,14 @@ A scalable, maintainable Appium testing framework built with Python using Page O
 
 - **Multi-Platform Support**: Configurable for both iOS and Android
 - **Page Object Model**: Clean separation of page logic from test logic
-- **BaseTest Class**: All tests inherit from BaseTest for consistent setup/teardown
+- **Automatic Page Load**: Page objects automatically wait for page load in constructor
 - **Driver Reset**: Automatic app reset before each test using `driver.reset()`
 - **JSON Configuration**: Centralized configuration for app build, version, and environment
 - **Custom Appium Wrapper**: Reusable wrapper for common Appium operations
 - **Wait-Utils Layer**: Explicit waits only (no implicit waits) for reliable test execution
 - **UV Package Management**: Fast Python package management with `uv`
 - **Pytest Framework**: Modern testing framework with fixtures, parametrization, and markers
+- **Implicit Test Data Loading**: Automatic test case data loading based on test function names
 
 ## Project Structure
 
@@ -39,7 +40,7 @@ AppiumAutomation/
 │   ├── login_test_data.json     # Login test scenarios
 │   └── user_test_data.json      # User management scenarios
 ├── pyproject.toml               # UV project configuration
-├── requirements.txt             # Python dependencies (legacy)
+├── requirements.txt             # Python dependencies (for pip users, optional if using uv)
 └── README.md                    # This file
 ```
 
@@ -76,10 +77,12 @@ source .venv/bin/activate  # On macOS/Linux
 
 ### Alternative: Traditional pip Installation
 
-If you prefer using pip:
+If you prefer using pip instead of uv:
 ```bash
 pip install -r requirements.txt
 ```
+
+**Note:** `requirements.txt` is optional if you're using `uv`. All dependencies are defined in `pyproject.toml`. The `requirements.txt` file is provided for compatibility with pip-based workflows.
 
 ### Appium Server Setup
 
@@ -227,6 +230,8 @@ class MyPage(BasePage):
         self.appium.click(self.BUTTON)
 ```
 
+**Note:** Page objects automatically wait for page load in the constructor. You don't need to call `wait_for_page_load()` explicitly. To disable this behavior, use `MyPage(driver, wait_for_load=False)`.
+
 ### Writing Tests
 
 With pytest, you use **fixtures** instead of inheriting from a base class. The framework provides these fixtures:
@@ -234,7 +239,8 @@ With pytest, you use **fixtures** instead of inheriting from a base class. The f
 - `driver`: Appium WebDriver instance (created per test, resets app before each test)
 - `appium_wrapper`: AppiumWrapper instance
 - `wait_utils`: WaitUtils instance
-- `test_data_loader`: TestDataLoader instance
+- `test_data_loader`: TestDataLoader instance (for manual test data loading)
+- `test_case`: Automatically loads test case data based on test function name
 - `config`: Configuration dictionary
 
 #### Simple Test Example:
@@ -245,17 +251,31 @@ from src.pages.my_page import MyPage
 
 def test_something(driver):
     """Simple test using driver fixture."""
-    # Page objects
+    # Page objects automatically wait for page load in constructor
     my_page = MyPage(driver)
-    
-    # Wait for page load
-    assert my_page.wait_for_page_load()
     
     # Perform actions
     my_page.click_button()
     
     # Assertions
     assert my_page.is_page_loaded()
+```
+
+#### Test with Test Case Data (Implicit Loading):
+
+```python
+def test_successful_login(driver, test_case):
+    """Test automatically loads test case data based on function name."""
+    # test_case fixture automatically loads data for "test_successful_login"
+    # Maps to "valid_login" test case in login_test_data.json
+    
+    login_page = LoginPage(driver)  # Automatically waits for page load
+    home_page = login_page.login(
+        test_case["username"], 
+        test_case["password"]
+    )  # Returns HomePage (automatically waits for page load)
+    
+    assert home_page.is_logged_in()
 ```
 
 #### Test with Multiple Fixtures:
@@ -266,7 +286,7 @@ def test_with_wrapper(driver, appium_wrapper, test_data_loader):
     # Use appium_wrapper for direct operations
     appium_wrapper.click((AppiumBy.ID, "button_id"))
     
-    # Load test data
+    # Load test data manually if needed
     test_data = test_data_loader.get_test_case_data("my_test_data", "test_case_1")
 ```
 
@@ -388,12 +408,46 @@ Test data files follow this structure:
 
 ### Using Test Data in Tests
 
-#### Method 1: Load Specific Test Case
+#### Method 1: Automatic Test Case Loading (Recommended)
+
+The `test_case` fixture automatically loads test case data based on your test function name:
+
+```python
+def test_successful_login(driver, test_case):
+    """Test automatically loads 'valid_login' test case."""
+    # test_case is automatically loaded based on function name
+    # test_successful_login -> valid_login (automatic mapping)
+    
+    login_page = LoginPage(driver)  # Automatically waits for page load
+    home_page = login_page.login(
+        test_case["username"], 
+        test_case["password"]
+    )  # Returns HomePage (automatically waits for page load)
+    
+    # Verify expected result
+    if "expected_message" in test_case:
+        assert test_case["expected_message"] in home_page.get_welcome_message()
+```
+
+**Automatic Test Name Mapping:**
+- `test_successful_login` → `valid_login`
+- `test_login_with_invalid_credentials` → `invalid_username`
+- `test_login_with_empty_fields` → `empty_credentials`
+
+**Override mapping if needed:**
+```python
+@pytest.mark.test_case_name("custom_test_case", data_file="my_test_data")
+def test_custom(driver, test_case):
+    # Uses custom_test_case from my_test_data.json
+    pass
+```
+
+#### Method 2: Manual Test Case Loading
 
 ```python
 def test_successful_login(driver, test_data_loader):
-    """Test using specific test case data."""
-    # Get specific test case data
+    """Test using manual test case data loading."""
+    # Get specific test case data manually
     test_case = test_data_loader.get_test_case_data(
         "login_test_data", 
         "valid_login"
@@ -401,7 +455,7 @@ def test_successful_login(driver, test_data_loader):
     
     # Use test data
     login_page = LoginPage(driver)
-    login_page.login(
+    home_page = login_page.login(
         test_case["username"], 
         test_case["password"]
     )
@@ -411,7 +465,7 @@ def test_successful_login(driver, test_data_loader):
         assert test_case["expected_message"] in home_page.get_welcome_message()
 ```
 
-#### Method 2: Data-Driven Test with Pytest Parametrize (Recommended)
+#### Method 3: Data-Driven Test with Pytest Parametrize
 
 ```python
 @pytest.mark.parametrize("test_case_name", [
@@ -425,15 +479,15 @@ def test_login_scenarios(driver, test_data_loader, test_case_name):
     test_case = test_data_loader.get_test_case_data("login_test_data", test_case_name)
     
     # Use test_case data
-    login_page = LoginPage(driver)
-    login_page.login(
+    login_page = LoginPage(driver)  # Automatically waits for page load
+    home_page = login_page.login(
         test_case["username"],
         test_case["password"]
-    )
+    )  # Returns HomePage (automatically waits for page load)
     # Verify results...
 ```
 
-#### Method 3: Load All Test Cases Dynamically
+#### Method 4: Load All Test Cases Dynamically
 
 ```python
 def test_all_login_scenarios(driver, test_data_loader):
@@ -442,6 +496,7 @@ def test_all_login_scenarios(driver, test_data_loader):
     
     for test_case in test_cases:
         test_name = test_case.get("_name", "unknown")
+        login_page = LoginPage(driver)  # Automatically waits for page load
         # Use test_case data...
 ```
 
@@ -492,7 +547,8 @@ The framework provides pytest fixtures for easy test setup:
 - **`driver` fixture**: Creates Appium driver, resets app before each test, quits after test
 - **`appium_wrapper` fixture**: Provides AppiumWrapper instance
 - **`wait_utils` fixture**: Provides WaitUtils instance
-- **`test_data_loader` fixture**: Provides TestDataLoader instance
+- **`test_data_loader` fixture**: Provides TestDataLoader instance (for manual data loading)
+- **`test_case` fixture**: Automatically loads test case data based on test function name
 - **`config` fixture**: Provides configuration dictionary
 
 ### BaseTest (Optional)
@@ -534,23 +590,26 @@ Loads and provides access to:
 
 2. **Page Object Model**: Keep all page-specific logic in page objects, not in tests.
 
-3. **Use Pytest Fixtures**: Use the provided fixtures (`driver`, `appium_wrapper`, etc.) instead of inheriting from BaseTest.
+3. **Use Pytest Fixtures**: Use the provided fixtures (`driver`, `test_case`, `appium_wrapper`, etc.) instead of inheriting from BaseTest.
 
 4. **Use AppiumWrapper**: Use the custom wrapper instead of direct driver calls for consistency.
 
-5. **Override `is_page_loaded()`**: Implement page-specific load checks in page objects.
+5. **Override `is_page_loaded()`**: Implement page-specific load checks in page objects. Page objects automatically wait for page load in the constructor.
 
-6. **Configuration**: Use platform-specific config files or environment variables for easy platform switching.
+6. **Use `test_case` fixture**: For automatic test case data loading based on test function names, use the `test_case` fixture instead of manually calling `test_data_loader.get_test_case_data()`.
 
-7. **Platform Selection**: The framework automatically detects the platform from:
+7. **Configuration**: Use platform-specific config files or environment variables for easy platform switching.
+
+8. **Platform Selection**: The framework automatically detects the platform from:
    - Class attribute `platform`
    - Environment variable `APPIUM_PLATFORM`
    - Configuration file name (`app_config_android.json` or `app_config_ios.json`)
    - Default config file platform setting
 
-8. **Data-Driven Testing**: Use test data files to separate test logic from test data:
+9. **Data-Driven Testing**: Use test data files to separate test logic from test data:
    - Store test data in JSON files in `test_data/` directory
-   - Use `test_data_loader` in tests to access test data
+   - Use `test_case` fixture for automatic test case loading based on test function names
+   - Use `test_data_loader` for manual test data access when needed
    - Support for common data, environment-specific data, and test cases
 
 ## Platform-Specific Notes
@@ -572,6 +631,8 @@ Loads and provides access to:
 
 - The framework automatically resets the app before each test using `driver.reset()`
 - All waits are explicit - no implicit waits are used
+- Page objects automatically wait for page load in the constructor (no need to call `wait_for_page_load()` explicitly)
+- Test case data is automatically loaded via the `test_case` fixture based on test function names
 - Screenshots are automatically saved to the `screenshots/` directory
 - The framework is designed to be easily extensible and maintainable
 - Platform-specific capabilities are automatically applied based on the selected platform
