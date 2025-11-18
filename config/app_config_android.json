@@ -1,0 +1,30 @@
+{
+  "app": {
+    "build_number": "1.0.0",
+    "version": "1.0",
+    "package_name": "com.example.app",
+    "activity_name": "com.example.app.MainActivity",
+    "app_path": "./apps/app.apk"
+  },
+  "environment": {
+    "platform": "Android",
+    "platform_version": "11.0",
+    "device_name": "emulator-5554",
+    "automation_name": "UiAutomator2",
+    "server_url": "http://localhost:4723",
+    "android_capabilities": {
+      "avd": "Pixel_4_API_30",
+      "avdLaunchTimeout": 120000,
+      "avdReadyTimeout": 120000
+    }
+  },
+  "capabilities": {
+    "new_command_timeout": 300,
+    "no_reset": false,
+    "full_reset": false,
+    "auto_grant_permissions": true,
+    "unicodeKeyboard": true,
+    "resetKeyboard": true
+  }
+}
+

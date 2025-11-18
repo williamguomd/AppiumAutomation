@@ -1,0 +1,45 @@
+{
+  "common": {
+    "app_name": "MyApp",
+    "timeout": 30
+  },
+  "test_cases": {
+    "valid_login": {
+      "username": "testuser",
+      "password": "testpassword",
+      "expected_result": "success",
+      "expected_message": "Welcome"
+    },
+    "invalid_username": {
+      "username": "invaliduser",
+      "password": "testpassword",
+      "expected_result": "error",
+      "expected_message": "Invalid username or password"
+    },
+    "invalid_password": {
+      "username": "testuser",
+      "password": "wrongpassword",
+      "expected_result": "error",
+      "expected_message": "Invalid username or password"
+    },
+    "empty_credentials": {
+      "username": "",
+      "password": "",
+      "expected_result": "error",
+      "expected_message": "Please enter username and password"
+    },
+    "empty_username": {
+      "username": "",
+      "password": "testpassword",
+      "expected_result": "error",
+      "expected_message": "Username is required"
+    },
+    "empty_password": {
+      "username": "testuser",
+      "password": "",
+      "expected_result": "error",
+      "expected_message": "Password is required"
+    }
+  }
+}
+

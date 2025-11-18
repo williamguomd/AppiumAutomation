@@ -1,0 +1,31 @@
+{
+  "app": {
+    "build_number": "1.0.0",
+    "version": "1.0",
+    "bundle_id": "com.example.app",
+    "app_path": "./apps/app.ipa"
+  },
+  "environment": {
+    "platform": "iOS",
+    "platform_version": "16.0",
+    "device_name": "iPhone 14",
+    "automation_name": "XCUITest",
+    "server_url": "http://localhost:4723",
+    "ios_capabilities": {
+      "udid": "",
+      "xcodeOrgId": "",
+      "xcodeSigningId": "iPhone Developer",
+      "updatedWDABundleId": "",
+      "wdaLaunchTimeout": 60000,
+      "iosInstallPause": 8000
+    }
+  },
+  "capabilities": {
+    "new_command_timeout": 300,
+    "no_reset": false,
+    "full_reset": false,
+    "autoAcceptAlerts": true,
+    "autoDismissAlerts": false
+  }
+}
+
