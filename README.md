@@ -66,13 +66,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 ```
 
-This will create a virtual environment and install all dependencies.
+This will create a virtual environment (`.venv/`) and install all dependencies.
 
-3. Activate the virtual environment:
+**Note:** When using `uv run`, the virtual environment is automatically used - no manual activation needed! For example:
 ```bash
-source .venv/bin/activate  # On macOS/Linux
-# or
-.venv\Scripts\activate     # On Windows
+uv run pytest              # Automatically uses .venv
+uv run python script.py    # Automatically uses .venv
 ```
 
 ### Alternative: Traditional pip Installation
