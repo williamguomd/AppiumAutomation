@@ -7,17 +7,50 @@
   },
   "environment": {
     "platform": "iOS",
-    "platform_version": "16.0",
-    "device_name": "iPhone 14",
+    "platform_version": "17.0",
+    "device_name": "iPhone 15",
     "automation_name": "XCUITest",
     "server_url": "http://localhost:4723",
     "ios_capabilities": {
-      "udid": "",
       "xcodeOrgId": "",
       "xcodeSigningId": "iPhone Developer",
       "updatedWDABundleId": "",
       "wdaLaunchTimeout": 60000,
       "iosInstallPause": 8000
+    },
+    "devices": {
+      "iPhone 15": {
+        "device_name": "iPhone 15",
+        "platform_version": "17.0",
+        "ios_capabilities": {
+          "udid": ""
+        }
+      },
+      "iPhone 14": {
+        "device_name": "iPhone 14",
+        "platform_version": "16.0",
+        "ios_capabilities": {
+          "udid": ""
+        }
+      },
+      "iPhone 13": {
+        "device_name": "iPhone 13",
+        "platform_version": "15.0",
+        "ios_capabilities": {
+          "udid": ""
+        }
+      },
+      "iPhone 12": {
+        "device_name": "iPhone 12",
+        "platform_version": "14.0",
+        "ios_capabilities": {
+          "udid": ""
+        }
+      },
+      "default": {
+        "device_name": "iPhone 15",
+        "platform_version": "17.0"
+      }
     }
   },
   "capabilities": {

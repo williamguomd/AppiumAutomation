@@ -12,11 +12,13 @@ from src.utils.test_data_loader import TestDataLoader
 def config():
     """Load configuration for the test session."""
     platform = os.getenv('APPIUM_PLATFORM', None)
-    config_loader = ConfigLoader(platform=platform)
+    device = os.getenv('APPIUM_DEVICE', None)
+    config_loader = ConfigLoader(platform=platform, device=device)
     return {
         'capabilities': config_loader.get_all_capabilities(),
         'server_url': config_loader.get_server_url(),
         'platform': config_loader.get_platform(),
+        'device': config_loader.get_device(),
     }
 
 

@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 class ConfigLoader:
     """Loads and manages application configuration from JSON files."""
     
-    def __init__(self, config_path: str = None, platform: str = None):
+    def __init__(self, config_path: str = None, platform: str = None, device: str = None):
         """
         Initialize ConfigLoader.
         
@@ -15,6 +15,7 @@ class ConfigLoader:
             config_path: Path to the JSON configuration file.
                         If None, uses default path based on platform or app_config.json.
             platform: Platform to use ("iOS" or "Android"). If None, reads from config or env.
+            device: Device name to use. If None, reads from config, env, or uses default.
         """
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         
@@ -48,6 +49,12 @@ class ConfigLoader:
             self._platform = platform
         else:
             self._platform = self.get_environment_config().get("platform", "Android")
+        
+        # Determine device from parameter, env, or config
+        if device:
+            self._device = device
+        else:
+            self._device = os.getenv("APPIUM_DEVICE", None) or self.get_environment_config().get("device_name", "")
     
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from JSON file."""
@@ -87,21 +94,54 @@ class ConfigLoader:
         """Get the platform (iOS or Android)."""
         return self._platform
     
+    def get_device(self) -> str:
+        """Get the device name."""
+        return self._device
+    
+    def get_device_config(self) -> Dict[str, Any]:
+        """
+        Get device-specific configuration.
+        
+        Returns:
+            Dictionary containing device-specific settings, or empty dict if not found.
+        """
+        env_config = self.get_environment_config()
+        devices = env_config.get("devices", {})
+        
+        if self._device and self._device in devices:
+            return devices[self._device]
+        
+        # Return default device config if available
+        return devices.get("default", {})
+    
     def get_all_capabilities(self) -> Dict[str, Any]:
-        """Get all capabilities merged together, platform-specific."""
+        """Get all capabilities merged together, platform-specific and device-specific."""
         app_config = self.get_app_config()
         env_config = self.get_environment_config()
         caps_config = self.get_capabilities_config()
         platform = self.get_platform()
+        device_config = self.get_device_config()
         
         # Base capabilities
         capabilities = {
             "platformName": platform,
             "platformVersion": env_config.get("platform_version", ""),
-            "deviceName": env_config.get("device_name", ""),
+            "deviceName": self.get_device() or env_config.get("device_name", ""),
             "app": app_config.get("app_path", ""),
             **caps_config
         }
+        
+        # Apply device-specific overrides
+        if device_config:
+            # Device can override platform version, device name, etc.
+            if "platform_version" in device_config:
+                capabilities["platformVersion"] = device_config["platform_version"]
+            if "device_name" in device_config:
+                capabilities["deviceName"] = device_config["device_name"]
+            if "udid" in device_config:
+                capabilities["udid"] = device_config["udid"]
+            if "avd" in device_config:
+                capabilities["avd"] = device_config["avd"]
         
         # Platform-specific capabilities
         if platform.lower() == "android":
@@ -115,6 +155,10 @@ class ConfigLoader:
             android_caps = env_config.get("android_capabilities", {})
             capabilities.update(android_caps)
             
+            # Device-specific Android capabilities
+            if device_config and "android_capabilities" in device_config:
+                capabilities.update(device_config["android_capabilities"])
+            
         elif platform.lower() == "ios":
             capabilities["automationName"] = env_config.get("automation_name", "XCUITest")
             # iOS-specific
@@ -123,6 +167,10 @@ class ConfigLoader:
             # iOS capabilities from config
             ios_caps = env_config.get("ios_capabilities", {})
             capabilities.update(ios_caps)
+            
+            # Device-specific iOS capabilities
+            if device_config and "ios_capabilities" in device_config:
+                capabilities.update(device_config["ios_capabilities"])
         
         return capabilities
     

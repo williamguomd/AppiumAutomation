@@ -5,10 +5,11 @@ A scalable, maintainable Appium testing framework built with Python using Page O
 ## Features
 
 - **Multi-Platform Support**: Configurable for both iOS and Android
+- **Multi-Device Support**: Test on multiple devices (iPhone 15, iPhone 14, Pixel 7, etc.) with easy device selection
 - **Page Object Model**: Clean separation of page logic from test logic
 - **Automatic Page Load**: Page objects automatically wait for page load in constructor
 - **Driver Reset**: Automatic app reset before each test using `driver.reset()`
-- **JSON Configuration**: Centralized configuration for app build, version, and environment
+- **JSON Configuration**: Centralized configuration for app build, version, environment, and devices
 - **Custom Appium Wrapper**: Reusable wrapper for common Appium operations
 - **Wait-Utils Layer**: Explicit waits only (no implicit waits) for reliable test execution
 - **UV Package Management**: Fast Python package management with `uv`
@@ -157,13 +158,36 @@ Edit `config/app_config_android.json`:
   },
   "environment": {
     "platform": "Android",
-    "platform_version": "11.0",
+    "platform_version": "13.0",
     "device_name": "emulator-5554",
     "automation_name": "UiAutomator2",
     "server_url": "http://localhost:4723",
     "android_capabilities": {
-      "avd": "Pixel_4_API_30",
-      "avdLaunchTimeout": 120000
+      "avdLaunchTimeout": 120000,
+      "avdReadyTimeout": 120000
+    },
+    "devices": {
+      "Pixel_7_API_33": {
+        "device_name": "emulator-5554",
+        "platform_version": "13.0",
+        "android_capabilities": {
+          "avd": "Pixel_7_API_33"
+        }
+      },
+      "Pixel_6_API_31": {
+        "device_name": "emulator-5556",
+        "platform_version": "12.0",
+        "android_capabilities": {
+          "avd": "Pixel_6_API_31"
+        }
+      },
+      "Samsung_Galaxy_S21": {
+        "device_name": "emulator-5560",
+        "platform_version": "12.0",
+        "android_capabilities": {
+          "avd": "Samsung_Galaxy_S21"
+        }
+      }
     }
   },
   "capabilities": {
@@ -188,14 +212,33 @@ Edit `config/app_config_ios.json`:
   },
   "environment": {
     "platform": "iOS",
-    "platform_version": "16.0",
-    "device_name": "iPhone 14",
+    "platform_version": "17.0",
+    "device_name": "iPhone 15",
     "automation_name": "XCUITest",
     "server_url": "http://localhost:4723",
     "ios_capabilities": {
-      "udid": "",
       "xcodeOrgId": "",
       "xcodeSigningId": "iPhone Developer"
+    },
+    "devices": {
+      "iPhone 15": {
+        "device_name": "iPhone 15",
+        "platform_version": "17.0",
+        "ios_capabilities": {
+          "udid": ""
+        }
+      },
+      "iPhone 14": {
+        "device_name": "iPhone 14",
+        "platform_version": "16.0",
+        "ios_capabilities": {
+          "udid": ""
+        }
+      },
+      "iPhone 13": {
+        "device_name": "iPhone 13",
+        "platform_version": "15.0"
+      }
     }
   },
   "capabilities": {
@@ -205,6 +248,21 @@ Edit `config/app_config_ios.json`:
   }
 }
 ```
+
+### Device Selection
+
+The framework supports testing on multiple devices. Devices are configured in the `devices` section of the config file.
+
+**Select device via environment variable:**
+```bash
+APPIUM_DEVICE="iPhone 15" uv run pytest
+APPIUM_DEVICE="Pixel_7_API_33" uv run pytest
+```
+
+**Device configuration structure:**
+- Each device can have its own `platform_version`, `device_name`, `udid` (iOS), `avd` (Android), etc.
+- Device-specific capabilities override default capabilities
+- If no device is specified, uses the default device or the `device_name` from environment config
 
 ## Usage
 
@@ -338,6 +396,24 @@ APPIUM_PLATFORM=Android uv run pytest
 
 # iOS
 APPIUM_PLATFORM=iOS uv run pytest
+```
+
+#### Run tests on a specific device:
+```bash
+# iOS - iPhone 15
+APPIUM_PLATFORM=iOS APPIUM_DEVICE="iPhone 15" uv run pytest
+
+# iOS - iPhone 14
+APPIUM_PLATFORM=iOS APPIUM_DEVICE="iPhone 14" uv run pytest
+
+# iOS - iPhone 13
+APPIUM_PLATFORM=iOS APPIUM_DEVICE="iPhone 13" uv run pytest
+
+# Android - Pixel 7
+APPIUM_PLATFORM=Android APPIUM_DEVICE="Pixel_7_API_33" uv run pytest
+
+# Android - Pixel 6
+APPIUM_PLATFORM=Android APPIUM_DEVICE="Pixel_6_API_31" uv run pytest
 ```
 
 #### Run specific tests:
@@ -599,11 +675,11 @@ Loads and provides access to:
 
 7. **Configuration**: Use platform-specific config files or environment variables for easy platform switching.
 
-8. **Platform Selection**: The framework automatically detects the platform from:
-   - Class attribute `platform`
-   - Environment variable `APPIUM_PLATFORM`
-   - Configuration file name (`app_config_android.json` or `app_config_ios.json`)
-   - Default config file platform setting
+8. **Platform and Device Selection**: The framework automatically detects:
+   - **Platform** from: Class attribute `platform`, environment variable `APPIUM_PLATFORM`, or config file name
+   - **Device** from: Environment variable `APPIUM_DEVICE` or default device in config
+   - Configure multiple devices in the `devices` section of config files
+   - Each device can have its own platform version, capabilities, and settings
 
 9. **Data-Driven Testing**: Use test data files to separate test logic from test data:
    - Store test data in JSON files in `test_data/` directory

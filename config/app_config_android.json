@@ -8,14 +8,50 @@
   },
   "environment": {
     "platform": "Android",
-    "platform_version": "11.0",
+    "platform_version": "13.0",
     "device_name": "emulator-5554",
     "automation_name": "UiAutomator2",
     "server_url": "http://localhost:4723",
     "android_capabilities": {
-      "avd": "Pixel_4_API_30",
       "avdLaunchTimeout": 120000,
       "avdReadyTimeout": 120000
+    },
+    "devices": {
+      "Pixel_7_API_33": {
+        "device_name": "emulator-5554",
+        "platform_version": "13.0",
+        "android_capabilities": {
+          "avd": "Pixel_7_API_33"
+        }
+      },
+      "Pixel_6_API_31": {
+        "device_name": "emulator-5556",
+        "platform_version": "12.0",
+        "android_capabilities": {
+          "avd": "Pixel_6_API_31"
+        }
+      },
+      "Pixel_5_API_30": {
+        "device_name": "emulator-5558",
+        "platform_version": "11.0",
+        "android_capabilities": {
+          "avd": "Pixel_5_API_30"
+        }
+      },
+      "Samsung_Galaxy_S21": {
+        "device_name": "emulator-5560",
+        "platform_version": "12.0",
+        "android_capabilities": {
+          "avd": "Samsung_Galaxy_S21"
+        }
+      },
+      "default": {
+        "device_name": "emulator-5554",
+        "platform_version": "13.0",
+        "android_capabilities": {
+          "avd": "Pixel_7_API_33"
+        }
+      }
     }
   },
   "capabilities": {
